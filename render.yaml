@@ -11,9 +11,9 @@ services:
 
     buildCommand: npm ci --include=dev && npm run build
 
-    # node dist/main, NO `nest start`: ese es el comando de desarrollo, recompila
-    # TypeScript en cada arranque y agota el heap de la instancia gratuita.
-    # start:prod aplica ademas las migraciones pendientes antes de escuchar.
+    # start y start:prod son lo mismo: prisma migrate deploy && node dist/main.
+    # `nest start` (el de desarrollo) recompila TypeScript en cada arranque y
+    # agota el heap de la instancia gratuita.
     startCommand: npm run start:prod
 
     healthCheckPath: /api/health
