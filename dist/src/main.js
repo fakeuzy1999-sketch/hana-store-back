@@ -14,8 +14,9 @@ async function bootstrap() {
         transform: true,
         transformOptions: { enableImplicitConversion: false },
     }));
-    await app.listen(Number(process.env.PORT ?? 3000));
-    console.log(`Hannah Store API en http://localhost:${process.env.PORT ?? 3000}/api`);
+    const port = Number(process.env.PORT ?? 3000);
+    await app.listen(port, '0.0.0.0');
+    console.log(`Hannah Store API escuchando en el puerto ${port}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

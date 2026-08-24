@@ -18,7 +18,9 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(Number(process.env.PORT ?? 3000));
-  console.log(`Hannah Store API en http://localhost:${process.env.PORT ?? 3000}/api`);
+  // 0.0.0.0: Render y cualquier contenedor enrutan desde fuera, no desde localhost.
+  const port = Number(process.env.PORT ?? 3000);
+  await app.listen(port, '0.0.0.0');
+  console.log(`Hannah Store API escuchando en el puerto ${port}`);
 }
 bootstrap();

@@ -12,6 +12,7 @@ const config_1 = require("@nestjs/config");
 const serve_static_1 = require("@nestjs/serve-static");
 const path_1 = require("path");
 const prisma_module_1 = require("./prisma/prisma.module");
+const health_controller_1 = require("./health.controller");
 const auth_module_1 = require("./modules/auth/auth.module");
 const catalog_module_1 = require("./modules/catalog/catalog.module");
 const orders_module_1 = require("./modules/orders/orders.module");
@@ -39,6 +40,7 @@ exports.AppModule = AppModule = __decorate([
             uploads_module_1.UploadsModule,
             settings_module_1.SettingsModule,
         ],
+        controllers: [health_controller_1.HealthController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

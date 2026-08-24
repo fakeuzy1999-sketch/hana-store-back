@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
+import { HealthController } from './health.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -27,5 +28,6 @@ import { SettingsModule } from './modules/settings/settings.module';
     UploadsModule,
     SettingsModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
