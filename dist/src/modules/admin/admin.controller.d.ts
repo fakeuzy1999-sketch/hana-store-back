@@ -201,31 +201,31 @@ export declare class AdminController {
     }>;
     createProduct(dto: ProductDto): Promise<{
         images: {
-            url: string;
             id: string;
-            position: number;
             productId: string;
+            position: number;
+            url: string;
         }[];
         variants: {
             id: string;
-            sku: string;
             productId: string;
             size: string;
             color: string;
+            sku: string;
             stock: number;
         }[];
     } & {
-        isFeatured: boolean;
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
-        slug: string;
         ref: string;
+        slug: string;
         description: string;
         categoryId: string;
         price: number;
         isHidden: boolean;
-        createdAt: Date;
-        updatedAt: Date;
+        isFeatured: boolean;
     }>;
     updateProduct(id: string, dto: ProductDto): Promise<{
         category: {
@@ -235,58 +235,58 @@ export declare class AdminController {
             position: number;
         };
         images: {
-            url: string;
             id: string;
-            position: number;
             productId: string;
+            position: number;
+            url: string;
         }[];
         variants: {
             id: string;
-            sku: string;
             productId: string;
             size: string;
             color: string;
+            sku: string;
             stock: number;
         }[];
     } & {
-        isFeatured: boolean;
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
-        slug: string;
         ref: string;
+        slug: string;
         description: string;
         categoryId: string;
         price: number;
         isHidden: boolean;
-        createdAt: Date;
-        updatedAt: Date;
+        isFeatured: boolean;
     }>;
     toggleHidden(id: string): Promise<{
-        isFeatured: boolean;
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
-        slug: string;
         ref: string;
+        slug: string;
         description: string;
         categoryId: string;
         price: number;
         isHidden: boolean;
-        createdAt: Date;
-        updatedAt: Date;
+        isFeatured: boolean;
     }>;
     removeProduct(id: string): Promise<{
         ok: boolean;
     }>;
     setStock(id: string, dto: StockDto): Promise<{
         id: string;
-        sku: string;
         productId: string;
         size: string;
         color: string;
+        sku: string;
         stock: number;
     }>;
     cod(query: ReportQueryDto): Promise<{
-        range: "week" | "today" | "month";
+        range: "today" | "week" | "month";
         collected: number;
         dispatched: number;
         averageTicket: number;
@@ -311,61 +311,61 @@ export declare class AdminController {
         zone: {
             number: number;
             id: string;
+            deliveryFee: number;
             name: string;
             neighborhoods: string[];
-            deliveryFee: number;
             etaHoursMin: number;
             etaHoursMax: number;
             active: boolean;
         } | null;
     } & {
         id: string;
-        name: string;
-        active: boolean;
-        phone: string;
         userId: string | null;
         zoneId: string | null;
+        name: string;
+        active: boolean;
         initials: string;
+        phone: string;
     })[]>;
     createCourier(dto: CourierDto): import("@prisma/client").Prisma.Prisma__CourierClient<{
         zone: {
             number: number;
             id: string;
+            deliveryFee: number;
             name: string;
             neighborhoods: string[];
-            deliveryFee: number;
             etaHoursMin: number;
             etaHoursMax: number;
             active: boolean;
         } | null;
     } & {
         id: string;
-        name: string;
-        active: boolean;
-        phone: string;
         userId: string | null;
         zoneId: string | null;
+        name: string;
+        active: boolean;
         initials: string;
+        phone: string;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     updateCourier(id: string, dto: CourierDto): Promise<{
         zone: {
             number: number;
             id: string;
+            deliveryFee: number;
             name: string;
             neighborhoods: string[];
-            deliveryFee: number;
             etaHoursMin: number;
             etaHoursMax: number;
             active: boolean;
         } | null;
     } & {
         id: string;
-        name: string;
-        active: boolean;
-        phone: string;
         userId: string | null;
         zoneId: string | null;
+        name: string;
+        active: boolean;
         initials: string;
+        phone: string;
     }>;
     routesToday(): Promise<{
         routes: {

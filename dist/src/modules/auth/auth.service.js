@@ -53,6 +53,9 @@ function normalizePhone(raw) {
     const local = digits.startsWith('57') && digits.length > 10 ? digits.slice(2) : digits;
     return `+57${local}`;
 }
+function normalizeEmail(raw) {
+    return raw.trim().toLowerCase();
+}
 let AuthService = class AuthService {
     prisma;
     jwt;
@@ -61,15 +64,19 @@ let AuthService = class AuthService {
         this.jwt = jwt;
     }
     async register(dto) {
-        const phone = normalizePhone(dto.phone);
-        const existing = await this.prisma.user.findUnique({ where: { phone } });
-        if (existing)
-            throw new common_1.ConflictException('Ya existe una cuenta con ese teléfono');
+        const email = normalizeEmail(dto.email);
+        if (await this.prisma.user.findUnique({ where: { email } })) {
+            throw new common_1.ConflictException('Ya existe una cuenta con ese correo');
+        }
+        const phone = dto.phone ? normalizePhone(dto.phone) : null;
+        if (phone && (await this.prisma.user.findUnique({ where: { phone } }))) {
+            throw new common_1.ConflictException('Ese teléfono ya está en otra cuenta');
+        }
         const user = await this.prisma.user.create({
             data: {
                 name: dto.name.trim(),
+                email,
                 phone,
-                email: dto.email?.trim() || null,
                 passwordHash: await bcrypt.hash(dto.password, 10),
             },
         });
@@ -77,10 +84,10 @@ let AuthService = class AuthService {
     }
     async login(dto) {
         const user = await this.prisma.user.findUnique({
-            where: { phone: normalizePhone(dto.phone) },
+            where: { email: normalizeEmail(dto.email) },
         });
         if (!user?.passwordHash || !(await bcrypt.compare(dto.password, user.passwordHash))) {
-            throw new common_1.UnauthorizedException('Teléfono o contraseña incorrectos');
+            throw new common_1.UnauthorizedException('Correo o contraseña incorrectos');
         }
         return this.sign(user);
     }
@@ -89,13 +96,16 @@ let AuthService = class AuthService {
         return this.publicUser(user);
     }
     sign(user) {
-        return {
-            token: this.jwt.sign({ sub: user.id }),
-            user: this.publicUser(user),
-        };
+        return { token: this.jwt.sign({ sub: user.id }), user: this.publicUser(user) };
     }
     publicUser(user) {
-        return { id: user.id, name: user.name, phone: user.phone, email: user.email, role: user.role };
+        return {
+            id: user.id,
+            name: user.name,
+            phone: user.phone,
+            email: user.email,
+            role: user.role,
+        };
     }
 };
 exports.AuthService = AuthService;

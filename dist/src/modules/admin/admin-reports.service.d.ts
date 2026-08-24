@@ -19,7 +19,7 @@ export declare class AdminReportsService {
         })[];
     }>;
     cod(range?: Range): Promise<{
-        range: "week" | "today" | "month";
+        range: "today" | "week" | "month";
         collected: number;
         dispatched: number;
         averageTicket: number;

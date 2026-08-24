@@ -5,12 +5,16 @@
  * en sus distintos estados) para que la app se vea viva desde el primer arranque.
  * Es idempotente: se puede correr varias veces.
  */
+import 'dotenv/config';
 import { OrderStatus, PrismaClient, Role } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg(
+    { connectionString: process.env.DATABASE_URL },
+    { schema: process.env.DB_SCHEMA },
+  ),
 });
 
 const ZONES = [

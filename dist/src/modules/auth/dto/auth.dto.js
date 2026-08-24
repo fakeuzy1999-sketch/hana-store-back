@@ -14,9 +14,9 @@ const class_validator_1 = require("class-validator");
 const PHONE = /^\+?[\d\s-]{7,20}$/;
 class RegisterDto {
     name;
-    phone;
-    password;
     email;
+    password;
+    phone;
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
@@ -26,9 +26,10 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.Matches)(PHONE, { message: 'Teléfono inválido' }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Correo invalido' }),
+    (0, class_validator_1.MaxLength)(160),
     __metadata("design:type", String)
-], RegisterDto.prototype, "phone", void 0);
+], RegisterDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(6, { message: 'La contraseña debe tener al menos 6 caracteres' }),
@@ -37,18 +38,18 @@ __decorate([
 ], RegisterDto.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(PHONE, { message: 'Telefono invalido' }),
     __metadata("design:type", String)
-], RegisterDto.prototype, "email", void 0);
+], RegisterDto.prototype, "phone", void 0);
 class LoginDto {
-    phone;
+    email;
     password;
 }
 exports.LoginDto = LoginDto;
 __decorate([
-    (0, class_validator_1.Matches)(PHONE, { message: 'Teléfono inválido' }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Correo invalido' }),
     __metadata("design:type", String)
-], LoginDto.prototype, "phone", void 0);
+], LoginDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(1),

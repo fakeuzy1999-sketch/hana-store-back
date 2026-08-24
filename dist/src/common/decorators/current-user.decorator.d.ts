@@ -3,6 +3,7 @@ export interface AuthUser {
     id: string;
     role: Role;
     name: string;
-    phone: string;
+    email: string;
+    phone: string | null;
 }
 export declare const CurrentUser: (...dataOrPipes: unknown[]) => ParameterDecorator;

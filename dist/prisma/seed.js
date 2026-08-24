@@ -33,11 +33,12 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
 const client_1 = require("@prisma/client");
 const adapter_pg_1 = require("@prisma/adapter-pg");
 const bcrypt = __importStar(require("bcryptjs"));
 const prisma = new client_1.PrismaClient({
-    adapter: new adapter_pg_1.PrismaPg({ connectionString: process.env.DATABASE_URL }),
+    adapter: new adapter_pg_1.PrismaPg({ connectionString: process.env.DATABASE_URL }, { schema: process.env.DB_SCHEMA }),
 });
 const ZONES = [
     { number: 1, name: 'Centro', neighborhoods: ['Teusaquillo', 'Centro'] },
@@ -165,20 +166,21 @@ async function main() {
         }
     }
     const admin = await prisma.user.upsert({
-        where: { phone: '+573105550011' },
+        where: { email: 'admin@hannahstore.co' },
         create: {
             name: 'Hannah Admin',
-            phone: '+573105550011',
             email: 'admin@hannahstore.co',
+            phone: '+573105550011',
             role: client_1.Role.ADMIN,
             passwordHash: await bcrypt.hash('admin123', 10),
         },
         update: { role: client_1.Role.ADMIN },
     });
     const valentina = await prisma.user.upsert({
-        where: { phone: '+573105554821' },
+        where: { email: 'valentina@ejemplo.com' },
         create: {
             name: 'Valentina Rios',
+            email: 'valentina@ejemplo.com',
             phone: '+573105554821',
             passwordHash: await bcrypt.hash('cliente123', 10),
         },
@@ -417,7 +419,7 @@ async function main() {
     return done();
 }
 function done() {
-    console.log('Listo. Admin: +573105550011 / admin123 - Clienta: +573105554821 / cliente123');
+    console.log('Listo. Admin: admin@hannahstore.co / admin123 - Clienta: valentina@ejemplo.com / cliente123');
 }
 main()
     .catch((e) => {

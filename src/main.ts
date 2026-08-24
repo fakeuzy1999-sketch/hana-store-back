@@ -1,3 +1,5 @@
+// Carga el .env antes de que se evaluen los metadatos de los modulos.
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';

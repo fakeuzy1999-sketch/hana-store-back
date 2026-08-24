@@ -1,10 +1,10 @@
 export declare class RegisterDto {
     name: string;
-    phone: string;
+    email: string;
     password: string;
-    email?: string;
+    phone?: string;
 }
 export declare class LoginDto {
-    phone: string;
+    email: string;
     password: string;
 }
