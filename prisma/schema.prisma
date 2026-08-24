@@ -1,0 +1,293 @@
+// Hannah Store — modelo de datos
+// Derivado del canvas design/Hannah Store.dc.html
+// Todos los importes son ENTEROS en pesos colombianos (sin decimales).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────── Personas ───────────────────────────
+
+enum Role {
+  CLIENT
+  ADMIN
+  COURIER
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  /// Opcional: la cuenta se abre con correo. El telefono es para la entrega.
+  phone        String?   @unique
+  passwordHash String?
+  role         Role      @default(CLIENT)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  addresses  Address[]
+  orders     Order[]
+  favorites  Favorite[]
+  courier    Courier?
+
+  @@map("users")
+}
+
+// ─────────────────────────── Cobertura ───────────────────────────
+
+/// Zona de reparto en Bogotá. El domicilio y la ventana de entrega dependen de la zona.
+model Zone {
+  id            String   @id @default(cuid())
+  number        Int      @unique
+  name          String
+  neighborhoods String[]
+  deliveryFee   Int      @default(8000)
+  etaHoursMin   Int      @default(24)
+  etaHoursMax   Int      @default(48)
+  active        Boolean  @default(true)
+
+  addresses Address[]
+  orders    Order[]
+  couriers  Courier[]
+
+  @@map("zones")
+}
+
+model Address {
+  id           String  @id @default(cuid())
+  userId       String
+  line         String
+  neighborhood String
+  zoneId       String
+  notes        String?
+  isDefault    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zone Zone @relation(fields: [zoneId], references: [id])
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ─────────────────────────── Catálogo ───────────────────────────
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  position Int       @default(0)
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  ref         String   @unique
+  name        String
+  slug        String   @unique
+  description String   @default("")
+  categoryId  String
+  price       Int
+  isHidden    Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category  Category       @relation(fields: [categoryId], references: [id])
+  images    ProductImage[]
+  variants  Variant[]
+  favorites Favorite[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String @id @default(cuid())
+  productId String
+  url       String
+  position  Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+/// Combinación talla + color con su propio stock. "Única" para bisutería.
+model Variant {
+  id        String  @id @default(cuid())
+  productId String
+  size      String
+  color     String  @default("")
+  sku       String  @unique
+  stock     Int     @default(0)
+
+  product Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  items   OrderItem[]
+
+  @@unique([productId, size, color])
+  @@index([productId])
+  @@map("variants")
+}
+
+model Favorite {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@map("favorites")
+}
+
+// ─────────────────────────── Reparto ───────────────────────────
+
+model Courier {
+  id       String  @id @default(cuid())
+  userId   String? @unique
+  name     String
+  initials String
+  phone    String
+  zoneId   String?
+  active   Boolean @default(true)
+
+  user     User?         @relation(fields: [userId], references: [id])
+  zone     Zone?         @relation(fields: [zoneId], references: [id])
+  orders   Order[]
+  closures CashClosure[]
+
+  @@map("couriers")
+}
+
+/// Caja del repartidor: efectivo recogido en el día y si ya la cerró en tienda.
+model CashClosure {
+  id              String    @id @default(cuid())
+  courierId       String
+  date            DateTime  @db.Date
+  deliveriesCount Int       @default(0)
+  collectedAmount Int       @default(0)
+  closed          Boolean   @default(false)
+  closedAt        DateTime?
+
+  courier Courier @relation(fields: [courierId], references: [id], onDelete: Cascade)
+
+  @@unique([courierId, date])
+  @@map("cash_closures")
+}
+
+// ─────────────────────────── Pedidos ───────────────────────────
+
+enum OrderStatus {
+  NUEVO
+  ASIGNADO
+  EN_RUTA
+  ENTREGADO_COBRADO
+  NO_RECIBIDO
+  DEVUELTO
+  CANCELADO
+}
+
+enum OrderEventType {
+  CONFIRMED
+  PACKED
+  OUT_FOR_DELIVERY
+  DELIVERED_PAID
+  FAILED
+  RETURNED
+  CANCELLED
+}
+
+model Order {
+  id     String      @id @default(cuid())
+  code   String      @unique
+  status OrderStatus @default(NUEVO)
+
+  // Cliente: registrado o invitado. Se guarda snapshot en ambos casos.
+  userId        String?
+  customerName  String
+  customerPhone String
+
+  // Snapshot de la dirección al momento del pedido.
+  addressLine   String
+  neighborhood  String
+  zoneId        String
+  courierNotes  String?
+
+  subtotal    Int
+  deliveryFee Int
+  total       Int
+
+  courierId          String?
+  deliveryWindowStart DateTime?
+  deliveryWindowEnd   DateTime?
+  deliveredAt        DateTime?
+  failureReason      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User?        @relation(fields: [userId], references: [id])
+  zone    Zone         @relation(fields: [zoneId], references: [id])
+  courier Courier?     @relation(fields: [courierId], references: [id])
+  items   OrderItem[]
+  events  OrderEvent[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([courierId])
+  @@map("orders")
+}
+
+/// Línea del pedido. Congela nombre y precio: editar el producto no cambia el histórico.
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  variantId String?
+
+  productRef  String
+  productName String
+  size        String
+  color       String @default("")
+  imageUrl    String?
+  unitPrice   Int
+  quantity    Int
+  lineTotal   Int
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant Variant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+/// Línea de tiempo que ve el cliente en el seguimiento del pedido.
+model OrderEvent {
+  id      String         @id @default(cuid())
+  orderId String
+  type    OrderEventType
+  note    String?
+  at      DateTime       @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_events")
+}
+
+// ─────────────────────────── Ajustes ───────────────────────────
+
+/// Datos de contacto y cobertura que muestra la pantalla de ayuda.
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}
