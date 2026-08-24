@@ -1,0 +1,55 @@
+# Despliegue de la API de Hannah Store en Render.
+# Este archivo asume que el backend esta en la RAIZ del repositorio
+# (repo hana-store-back). En el panel: New > Blueprint.
+
+services:
+  - type: web
+    name: hannah-store-api
+    runtime: node
+    plan: free
+    region: oregon
+
+    buildCommand: npm ci --include=dev && npm run build
+
+    # node dist/main, NO `nest start`: ese es el comando de desarrollo, recompila
+    # TypeScript en cada arranque y agota el heap de la instancia gratuita.
+    # start:prod aplica ademas las migraciones pendientes antes de escuchar.
+    startCommand: npm run start:prod
+
+    healthCheckPath: /api/health
+
+    envVars:
+      # Sin fijarlo, Render coge la ultima version que cumpla engines (Node 26).
+      - key: NODE_VERSION
+        value: "22"
+
+      # Neon. DATABASE_URL usa el pooler; DIRECT_URL es la conexion directa que
+      # exigen las migraciones. Ambas terminan en &schema=hannah.
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+
+      # Hannah Store vive en su propio esquema: la base la comparte otro proyecto.
+      - key: DB_SCHEMA
+        value: hannah
+
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+      # Dominio del frontend en Vercel, separado por comas si hay varios.
+      - key: CORS_ORIGIN
+        sync: false
+
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+
+    # OJO: en el plan free el disco es efimero y las fotos subidas se pierden en
+    # cada despliegue. Para conservarlas hace falta plan de pago y descomentar
+    # este disco (o mover las subidas a Cloudinary / S3).
+    # disk:
+    #   name: uploads
+    #   mountPath: /var/data
+    #   sizeGB: 1

@@ -1,4 +1,7 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  // prisma/ y prisma.config.ts quedan fuera a proposito: los ejecuta la CLI de
+  // Prisma con ts-node, nunca el build. Si entran, TypeScript sube el rootDir al
+  // raiz del proyecto y la salida pasa a ser dist/src/main.js en vez de dist/main.js.
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "prisma", "prisma.config.ts"]
 }

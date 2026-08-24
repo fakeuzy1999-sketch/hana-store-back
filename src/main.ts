@@ -7,7 +7,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix('api', { exclude: ['uploads/(.*)'] });
+  // Sintaxis de path-to-regexp v8 (Express 5): 'uploads/(.*)' quedo obsoleta.
+  app.setGlobalPrefix('api', { exclude: ['uploads/{*path}'] });
   app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true, credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({
