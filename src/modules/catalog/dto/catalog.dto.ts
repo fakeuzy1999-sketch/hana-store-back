@@ -41,7 +41,4 @@ export class ValidateCartDto {
   @ValidateNested({ each: true })
   @Type(() => CartLineDto)
   items: CartLineDto[];
-
-  /** Opcional: si se envia, la respuesta incluye domicilio y total. */
-  @IsOptional() @IsString() zoneId?: string;
 }

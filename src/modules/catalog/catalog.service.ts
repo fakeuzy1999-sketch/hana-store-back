@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DeliveryService } from '../settings/delivery.service';
 import { ProductQueryDto, Sort, ValidateCartDto } from './dto/catalog.dto';
 
 const INCLUDE = {
@@ -18,14 +19,13 @@ const ORDER_BY: Record<Sort, Prisma.ProductOrderByWithRelationInput> = {
 
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly delivery: DeliveryService,
+  ) {}
 
   categories() {
     return this.prisma.category.findMany({ orderBy: { position: 'asc' } });
-  }
-
-  zones() {
-    return this.prisma.zone.findMany({ where: { active: true }, orderBy: { number: 'asc' } });
   }
 
   async list(query: ProductQueryDto) {
@@ -119,8 +119,7 @@ export class CatalogService {
     });
 
     const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
-    const zone = dto.zoneId ? await this.prisma.zone.findUnique({ where: { id: dto.zoneId } }) : null;
-    const deliveryFee = zone?.deliveryFee ?? 0;
+    const { deliveryFee } = await this.delivery.terms();
 
     return {
       lines,

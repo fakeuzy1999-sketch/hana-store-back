@@ -46,7 +46,7 @@ export class AdminReportsService {
         }),
         this.prisma.order.findMany({
           where: { status: 'NUEVO' },
-          include: { zone: true },
+          select: { neighborhood: true },
         }),
         this.prisma.cashClosure.findMany({
           where: { closed: false, date: { gte: today } },
@@ -64,7 +64,7 @@ export class AdminReportsService {
     const failed = count('NO_RECIBIDO') + count('DEVUELTO');
     const successRate = delivered + failed > 0 ? Math.round((delivered / (delivered + failed)) * 100) : 100;
 
-    const zones = [...new Set(unassigned.map((o) => o.zone.number))].sort((a, b) => a - b);
+    const barrios = [...new Set(unassigned.map((o) => o.neighborhood))].sort();
 
     return {
       ordersToday,
@@ -77,7 +77,7 @@ export class AdminReportsService {
         unassigned.length && {
           key: 'sin_asignar',
           title: `${plural(unassigned.length, 'pedido', 'pedidos')} sin asignar`,
-          detail: zones.length ? `${zones.length === 1 ? 'Zona' : 'Zonas'} ${LIST.format(zones.map(String))}` : 'Sin zona',
+          detail: barrios.length ? LIST.format(barrios.slice(0, 3)) : 'Sin barrio',
           link: '/admin/pedidos',
           tone: 'warn',
         },
@@ -155,19 +155,19 @@ export class AdminReportsService {
   async codCsv(range: Range = 'today') {
     const orders = await this.prisma.order.findMany({
       where: { createdAt: { gte: startOf(range) }, status: { in: DISPATCHED } },
-      include: { courier: true, zone: true },
+      include: { courier: true },
       orderBy: { createdAt: 'asc' },
     });
 
     const rows = [
-      ['codigo', 'fecha', 'cliente', 'telefono', 'zona', 'repartidor', 'estado', 'total'].join(';'),
+      ['codigo', 'fecha', 'cliente', 'telefono', 'barrio', 'repartidor', 'estado', 'total'].join(';'),
       ...orders.map((o) =>
         [
           o.code,
           o.createdAt.toISOString(),
           o.customerName,
           o.customerPhone,
-          `Zona ${o.zone.number} ${o.zone.name}`,
+          o.neighborhood,
           o.courier?.name ?? '',
           o.status,
           o.total,

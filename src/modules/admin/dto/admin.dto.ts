@@ -17,7 +17,6 @@ import { OrderStatus } from '@prisma/client';
 
 export class OrderFilterDto {
   @IsOptional() @IsEnum(OrderStatus) status?: OrderStatus;
-  @IsOptional() @IsString() zoneId?: string;
   @IsOptional() @IsString() courierId?: string;
   @IsOptional() @IsString() q?: string;
 }
@@ -67,7 +66,6 @@ export class StockDto {
 export class CourierDto {
   @IsString() @MinLength(2) @MaxLength(80) name: string;
   @IsString() @MinLength(7) @MaxLength(20) phone: string;
-  @IsOptional() @IsString() zoneId?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 
@@ -83,17 +81,10 @@ export class CategoryDto {
   @IsOptional() @IsInt() @Min(0) position?: number;
 }
 
-export class ZoneDto {
-  @IsInt() @Min(1) number: number;
-  @IsString() @MinLength(2) @MaxLength(60) name: string;
-  @IsOptional() @IsArray() @IsString({ each: true }) neighborhoods?: string[];
-  @IsInt() @Min(0) deliveryFee: number;
-  @IsInt() @Min(0) etaHoursMin: number;
-  @IsInt() @Min(0) etaHoursMax: number;
-  @IsOptional() @IsBoolean() active?: boolean;
-}
-
-/** Los ajustes son texto libre; el importe de envio gratis viaja como cadena. */
+/**
+ * Los textos son libres y el importe de envio gratis viaja como cadena. El
+ * domicilio y la franja no son texto: se guardan en la entrega, no en `settings`.
+ */
 export class SettingsDto {
   @IsOptional() @IsString() @MaxLength(40) whatsapp?: string;
   @IsOptional() @IsString() @MaxLength(40) instagram?: string;
@@ -101,4 +92,8 @@ export class SettingsDto {
   @IsOptional() @IsString() @MaxLength(160) hours?: string;
   @IsOptional() @IsString() @MaxLength(160) tagline?: string;
   @IsOptional() @IsString() @MaxLength(12) freeShippingFrom?: string;
+
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) deliveryFee?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) etaHoursMin?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) etaHoursMax?: number;
 }

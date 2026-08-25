@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DeliveryService } from '../settings/delivery.service';
 import { normalizePhone } from '../auth/auth.service';
 import { CreateOrderDto } from './dto/orders.dto';
 
@@ -16,13 +17,15 @@ const WINDOW_END_HOUR = 17;
 export const ORDER_INCLUDE = {
   items: true,
   events: { orderBy: { at: 'asc' } },
-  zone: true,
   courier: true,
 } satisfies Prisma.OrderInclude;
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly delivery: DeliveryService,
+  ) {}
 
   /**
    * Crea el pedido contra entrega.
@@ -36,8 +39,8 @@ export class OrdersService {
     const phone = normalizePhone(dto.customerPhone);
 
     return this.prisma.$transaction(async (tx) => {
-      const zone = await tx.zone.findUnique({ where: { id: dto.zoneId } });
-      if (!zone?.active) throw new BadRequestException('Aun no llegamos a esa zona');
+      // Una sola ciudad: el domicilio y la franja salen de la entrega, no de lo que elija nadie.
+      const zone = await this.delivery.zone(tx);
 
       const variants = await tx.variant.findMany({
         where: { id: { in: dto.items.map((i) => i.variantId) } },
@@ -147,7 +150,6 @@ export class OrdersService {
       addressLine: order.addressLine,
       neighborhood: order.neighborhood,
       courierNotes: order.courierNotes,
-      zone: order.zone ? { id: order.zone.id, number: order.zone.number, name: order.zone.name } : null,
       courier: order.courier
         ? { id: order.courier.id, name: order.courier.name, initials: order.courier.initials, phone: order.courier.phone }
         : null,

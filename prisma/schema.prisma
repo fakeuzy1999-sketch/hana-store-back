@@ -41,7 +41,10 @@ model User {
 
 // ─────────────────────────── Cobertura ───────────────────────────
 
-/// Zona de reparto en Bogotá. El domicilio y la ventana de entrega dependen de la zona.
+/// Reparto. La tienda entrega en una sola ciudad, así que esta tabla se reduce a
+/// **una fila interna** (ver `DeliveryService`) que guarda el domicilio y la franja
+/// de entrega. Nadie elige zona: sigue aquí porque `Order.zoneId` y `Address.zoneId`
+/// son obligatorios y los pedidos históricos apuntan a ella.
 model Zone {
   id            String   @id @default(cuid())
   number        Int      @unique

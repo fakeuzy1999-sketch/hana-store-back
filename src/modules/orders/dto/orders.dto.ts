@@ -33,7 +33,6 @@ export class CreateOrderDto {
 
   @IsString() @MinLength(5) @MaxLength(160) addressLine: string;
   @IsString() @MinLength(2) @MaxLength(80) neighborhood: string;
-  @IsString() zoneId: string;
 
   @IsOptional() @IsString() @MaxLength(300) courierNotes?: string;
 }

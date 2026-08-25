@@ -1,15 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DeliveryService } from '../settings/delivery.service';
 import { AddressDto } from './dto/account.dto';
 
 @Injectable()
 export class AccountService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly delivery: DeliveryService,
+  ) {}
 
   addresses(userId: string) {
     return this.prisma.address.findMany({
       where: { userId },
-      include: { zone: true },
       orderBy: [{ isDefault: 'desc' }, { id: 'asc' }],
     });
   }
@@ -21,9 +24,9 @@ export class AccountService {
     if (isDefault) {
       await this.prisma.address.updateMany({ where: { userId }, data: { isDefault: false } });
     }
+    const zone = await this.delivery.zone();
     return this.prisma.address.create({
-      data: { ...dto, notes: dto.notes ?? null, isDefault, userId },
-      include: { zone: true },
+      data: { ...dto, notes: dto.notes ?? null, isDefault, userId, zoneId: zone.id },
     });
   }
 
@@ -35,7 +38,6 @@ export class AccountService {
     return this.prisma.address.update({
       where: { id },
       data: { ...dto, notes: dto.notes ?? null },
-      include: { zone: true },
     });
   }
 

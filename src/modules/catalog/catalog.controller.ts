@@ -11,11 +11,6 @@ export class CatalogController {
     return this.catalog.categories();
   }
 
-  @Get('zones')
-  zones() {
-    return this.catalog.zones();
-  }
-
   @Get('products')
   list(@Query() query: ProductQueryDto) {
     return this.catalog.list(query);

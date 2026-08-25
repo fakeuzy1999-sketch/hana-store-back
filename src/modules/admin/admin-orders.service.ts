@@ -40,7 +40,6 @@ export class AdminOrdersService {
   async list(filter: OrderFilterDto) {
     const where: Prisma.OrderWhereInput = {};
     if (filter.status) where.status = filter.status;
-    if (filter.zoneId) where.zoneId = filter.zoneId;
     if (filter.courierId) where.courierId = filter.courierId;
     if (filter.q) {
       where.OR = [

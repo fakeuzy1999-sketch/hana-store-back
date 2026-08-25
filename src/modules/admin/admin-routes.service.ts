@@ -16,7 +16,7 @@ export class AdminRoutesService {
   constructor(private readonly prisma: PrismaService) {}
 
   couriers() {
-    return this.prisma.courier.findMany({ include: { zone: true }, orderBy: { name: 'asc' } });
+    return this.prisma.courier.findMany({ orderBy: { name: 'asc' } });
   }
 
   create(dto: CourierDto) {
@@ -25,10 +25,8 @@ export class AdminRoutesService {
         name: dto.name.trim(),
         initials: initialsOf(dto.name),
         phone: normalizePhone(dto.phone),
-        zoneId: dto.zoneId ?? null,
         active: dto.active ?? true,
       },
-      include: { zone: true },
     });
   }
 
@@ -40,35 +38,31 @@ export class AdminRoutesService {
         name: dto.name.trim(),
         initials: initialsOf(dto.name),
         phone: normalizePhone(dto.phone),
-        zoneId: dto.zoneId ?? null,
         active: dto.active ?? true,
       },
-      include: { zone: true },
     });
   }
 
   /**
-   * Foto del dia: cuanto lleva cada repartidor de su ruta y que zonas
-   * quedaron con pedidos pendientes y nadie que los lleve.
+   * Foto del dia: cuanto lleva cada repartidor de su ruta y cuantos pedidos
+   * siguen sin que nadie los lleve.
    */
   async today() {
     const from = new Date();
     from.setHours(0, 0, 0, 0);
 
-    const [couriers, zones, unassignedByZone] = await Promise.all([
+    const [couriers, unassigned] = await Promise.all([
       this.prisma.courier.findMany({
         where: { active: true },
         include: {
-          zone: true,
           orders: { where: { createdAt: { gte: from } }, select: { status: true } },
         },
         orderBy: { name: 'asc' },
       }),
-      this.prisma.zone.findMany({ where: { active: true }, orderBy: { number: 'asc' } }),
-      this.prisma.order.groupBy({
-        by: ['zoneId'],
+      this.prisma.order.findMany({
         where: { status: 'NUEVO' },
-        _count: { _all: true },
+        select: { code: true, neighborhood: true },
+        orderBy: { createdAt: 'asc' },
       }),
     ]);
 
@@ -81,25 +75,15 @@ export class AdminRoutesService {
         name: c.name,
         initials: c.initials,
         phone: c.phone,
-        zone: c.zone ? { number: c.zone.number, name: c.zone.name, neighborhoods: c.zone.neighborhoods } : null,
         assigned,
         done,
         status: assigned === 0 ? 'SIN RUTA' : done === assigned ? 'TERMINO' : enRoute ? 'EN RUTA' : 'POR SALIR',
       };
     });
 
-    const covered = new Set(couriers.filter((c) => c.orders.length > 0 && c.zoneId).map((c) => c.zoneId));
-
     return {
       routes,
-      uncovered: zones
-        .filter((z) => !covered.has(z.id))
-        .map((z) => ({
-          id: z.id,
-          number: z.number,
-          name: z.name,
-          pending: unassignedByZone.find((g) => g.zoneId === z.id)?._count._all ?? 0,
-        })),
+      unassigned: unassigned.map((o) => ({ code: o.code, neighborhood: o.neighborhood })),
     };
   }
 

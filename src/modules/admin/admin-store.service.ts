@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CategoryDto, SettingsDto, ZoneDto } from './dto/admin.dto';
+import { DeliveryService } from '../settings/delivery.service';
+import { CategoryDto, SettingsDto } from './dto/admin.dto';
 
 /** `Vestidos de fiesta` -> `vestidos-de-fiesta`. El slug es la URL del catalogo. */
 function slugify(name: string): string {
@@ -14,13 +15,16 @@ function slugify(name: string): string {
 }
 
 /**
- * Categorias, zonas y ajustes de la tienda: lo que antes solo existia porque lo
- * creaba el seed. Sin esto, una base limpia deja el panel inservible (no se
- * puede crear un producto sin categoria ni entregar sin zonas).
+ * Categorias y ajustes de la tienda: lo que antes solo existia porque lo creaba
+ * el seed. Sin esto, una base limpia deja el panel inservible: no se puede crear
+ * un producto sin categoria.
  */
 @Injectable()
 export class AdminStoreService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly delivery: DeliveryService,
+  ) {}
 
   // ── Categorias ─────────────────────────────────────────────
   categories() {
@@ -65,54 +69,18 @@ export class AdminStoreService {
     return { ok: true };
   }
 
-  // ── Zonas ──────────────────────────────────────────────────
-  zones() {
-    return this.prisma.zone.findMany({
-      orderBy: { number: 'asc' },
-      include: { _count: { select: { orders: true, addresses: true, couriers: true } } },
-    });
-  }
-
-  async createZone(dto: ZoneDto) {
-    if (await this.prisma.zone.findUnique({ where: { number: dto.number } })) {
-      throw new BadRequestException(`Ya existe la zona número ${dto.number}`);
-    }
-    return this.prisma.zone.create({ data: this.zoneData(dto) });
-  }
-
-  async updateZone(id: string, dto: ZoneDto) {
-    await this.zoneOrThrow(id);
-    const clash = await this.prisma.zone.findUnique({ where: { number: dto.number } });
-    if (clash && clash.id !== id) throw new BadRequestException(`Ya existe la zona número ${dto.number}`);
-    return this.prisma.zone.update({ where: { id }, data: this.zoneData(dto) });
-  }
-
-  async removeZone(id: string) {
-    await this.zoneOrThrow(id);
-    const orders = await this.prisma.order.count({ where: { zoneId: id } });
-    if (orders) {
-      throw new BadRequestException(
-        `No se puede borrar: ${orders} pedido(s) son de esta zona. Desactívala en su lugar.`,
-      );
-    }
-    const addresses = await this.prisma.address.count({ where: { zoneId: id } });
-    if (addresses) {
-      throw new BadRequestException(
-        `No se puede borrar: ${addresses} dirección(es) guardadas apuntan a esta zona. Desactívala en su lugar.`,
-      );
-    }
-    await this.prisma.zone.delete({ where: { id } });
-    return { ok: true };
-  }
-
   // ── Ajustes ────────────────────────────────────────────────
   async settings() {
-    const rows = await this.prisma.setting.findMany();
-    return Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    const [rows, terms] = await Promise.all([this.prisma.setting.findMany(), this.delivery.terms()]);
+    // La ciudad no se edita aqui: si viajara de vuelta, el PUT la rechazaria por no estar en el DTO.
+    const { city, ...delivery } = terms;
+    return { ...Object.fromEntries(rows.map((r) => [r.key, r.value])), ...delivery };
   }
 
   async saveSettings(dto: SettingsDto) {
-    const entries = Object.entries(dto).filter(([, v]) => v !== undefined);
+    const { deliveryFee, etaHoursMin, etaHoursMax, ...texts } = dto;
+    await this.delivery.update({ deliveryFee, etaHoursMin, etaHoursMax });
+    const entries = Object.entries(texts).filter(([, v]) => v !== undefined);
     await this.prisma.$transaction(
       entries.map(([key, value]) =>
         this.prisma.setting.upsert({
@@ -126,27 +94,9 @@ export class AdminStoreService {
   }
 
   // ── Auxiliares ─────────────────────────────────────────────
-  private zoneData(dto: ZoneDto) {
-    return {
-      number: dto.number,
-      name: dto.name.trim(),
-      neighborhoods: (dto.neighborhoods ?? []).map((n) => n.trim()).filter(Boolean),
-      deliveryFee: dto.deliveryFee,
-      etaHoursMin: dto.etaHoursMin,
-      etaHoursMax: dto.etaHoursMax,
-      active: dto.active ?? true,
-    };
-  }
-
   private async categoryOrThrow(id: string) {
     const found = await this.prisma.category.findUnique({ where: { id } });
     if (!found) throw new NotFoundException('Categoría no encontrada');
-    return found;
-  }
-
-  private async zoneOrThrow(id: string) {
-    const found = await this.prisma.zone.findUnique({ where: { id } });
-    if (!found) throw new NotFoundException('Zona no encontrada');
     return found;
   }
 }

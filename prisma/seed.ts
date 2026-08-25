@@ -17,13 +17,8 @@ const prisma = new PrismaClient({
   ),
 });
 
-const ZONES = [
-  { number: 1, name: 'Centro', neighborhoods: ['Teusaquillo', 'Centro'] },
-  { number: 2, name: 'Nororiente', neighborhoods: ['Chapinero', 'Usaquen'] },
-  { number: 3, name: 'Occidente', neighborhoods: ['Fontibon'] },
-  { number: 4, name: 'Noroccidente', neighborhoods: ['Suba'] },
-  { number: 5, name: 'Suroccidente', neighborhoods: ['Kennedy'] },
-];
+// La tienda entrega en una sola ciudad: una fila interna con el domicilio y la franja.
+const ZONE = { number: 1, name: 'Barranquilla', deliveryFee: 8000, etaHoursMin: 24, etaHoursMax: 48 };
 
 const CATEGORIES = [
   { name: 'Vestidos', slug: 'vestidos', position: 1 },
@@ -95,15 +90,15 @@ const PRODUCTS = [
 ];
 
 const COURIERS = [
-  { name: 'Carlos Medina', phone: '+573105551001', zone: 2 },
-  { name: 'Ana Gomez', phone: '+573105551002', zone: 1 },
-  { name: 'Julian Torres', phone: '+573105551003', zone: 4 },
+  { name: 'Carlos Medina', phone: '+573105551001' },
+  { name: 'Ana Gomez', phone: '+573105551002' },
+  { name: 'Julian Torres', phone: '+573105551003' },
 ];
 
 const SETTINGS = {
   whatsapp: '+57 310 555 0011',
   instagram: '@hannahstore',
-  coverage: 'Bogota y alrededores - 24 a 48 h',
+  coverage: 'Barranquilla y alrededores - 24 a 48 h',
   hours: 'Respondemos de 9 a.m. a 7 p.m.',
   tagline: 'Moda que te representa - pago contra entrega',
   freeShippingFrom: '250000',
@@ -112,16 +107,12 @@ const SETTINGS = {
 async function main() {
   console.log('Sembrando Hannah Store...');
 
-  // Zonas de reparto
-  for (const z of ZONES) {
-    await prisma.zone.upsert({
-      where: { number: z.number },
-      create: { ...z, deliveryFee: 8000, etaHoursMin: 24, etaHoursMax: 48 },
-      update: { name: z.name, neighborhoods: z.neighborhoods },
-    });
-  }
-  const zones = await prisma.zone.findMany();
-  const zoneOf = (n: number) => zones.find((z) => z.number === n)!;
+  // Zona interna: la ciudad. No se elige en ningun sitio, solo guarda el domicilio.
+  const zone = await prisma.zone.upsert({
+    where: { number: ZONE.number },
+    create: ZONE,
+    update: { name: ZONE.name },
+  });
 
   // Categorias
   for (const c of CATEGORIES) {
@@ -186,8 +177,8 @@ async function main() {
       data: {
         userId: valentina.id,
         line: 'Cra 13 #85-42, apto 502',
-        neighborhood: 'Chapinero',
-        zoneId: zoneOf(2).id,
+        neighborhood: 'El Prado',
+        zoneId: zone.id,
         notes: 'Portería recibe hasta las 8 p.m.',
         isDefault: true,
       },
@@ -199,8 +190,8 @@ async function main() {
     const initials = c.name.split(' ').map((w) => w[0]).join('');
     await prisma.courier.upsert({
       where: { id: (await prisma.courier.findFirst({ where: { phone: c.phone } }))?.id ?? '-' },
-      create: { name: c.name, initials, phone: c.phone, zoneId: zoneOf(c.zone).id },
-      update: { name: c.name, initials, zoneId: zoneOf(c.zone).id },
+      create: { name: c.name, initials, phone: c.phone },
+      update: { name: c.name, initials },
     });
   }
   const couriers = await prisma.courier.findMany();
@@ -229,7 +220,6 @@ async function main() {
     userId?: string;
     line: string;
     neighborhood: string;
-    zone: number;
     status: OrderStatus;
     courier?: string;
     items: SeedItem[];
@@ -253,7 +243,6 @@ async function main() {
       };
     });
     const subtotal = items.reduce((s, i) => s + i.lineTotal, 0);
-    const zone = zoneOf(o.zone);
 
     const events: { type: any; note: string; at: Date }[] = [
       { type: 'CONFIRMED', note: 'Pedido confirmado', at: createdAt },
@@ -326,8 +315,7 @@ async function main() {
       phone: '+573105554821',
       userId: valentina.id,
       line: 'Cra 13 #85-42, apto 502',
-      neighborhood: 'Chapinero',
-      zone: 2,
+      neighborhood: 'El Prado',
       status: 'DEVUELTO',
       courier: 'Carlos',
       items: [{ sku: 'HS-0388-S-MARFIL', qty: 1 }, { sku: 'HS-0501-UNICA-DORADO', qty: 1 }],
@@ -340,8 +328,7 @@ async function main() {
       phone: '+573105554821',
       userId: valentina.id,
       line: 'Cra 13 #85-42, apto 502',
-      neighborhood: 'Chapinero',
-      zone: 2,
+      neighborhood: 'El Prado',
       status: 'ENTREGADO_COBRADO',
       courier: 'Ana',
       items: [{ sku: 'HS-0388-M-MARFIL', qty: 1 }],
@@ -352,8 +339,7 @@ async function main() {
       customer: 'Sofia Alvarez',
       phone: '+573125559034',
       line: 'Cl 40 Sur #78-11',
-      neighborhood: 'Kennedy',
-      zone: 5,
+      neighborhood: 'La Concepcion',
       status: 'NO_RECIBIDO',
       courier: 'Julian',
       items: [{ sku: 'HS-0388-M-MARFIL', qty: 1 }],
@@ -365,8 +351,7 @@ async function main() {
       customer: 'Daniela Mora',
       phone: '+573155552277',
       line: 'Cl 34 #16-08',
-      neighborhood: 'Teusaquillo',
-      zone: 1,
+      neighborhood: 'Boston',
       status: 'ENTREGADO_COBRADO',
       courier: 'Ana',
       items: [{ sku: 'HS-0501-UNICA-DORADO', qty: 1 }, { sku: 'HS-0388-S-MARFIL', qty: 1 }],
@@ -377,8 +362,7 @@ async function main() {
       customer: 'Laura Pena',
       phone: '+573145558812',
       line: 'Cra 92 #146-30',
-      neighborhood: 'Suba',
-      zone: 4,
+      neighborhood: 'Villa Country',
       status: 'NUEVO',
       items: [{ sku: 'HS-0388-S-MARFIL', qty: 1 }],
       hoursAgo: 4,
@@ -389,8 +373,7 @@ async function main() {
       phone: '+573105554821',
       userId: valentina.id,
       line: 'Cra 13 #85-42, apto 502',
-      neighborhood: 'Chapinero',
-      zone: 2,
+      neighborhood: 'El Prado',
       status: 'EN_RUTA',
       courier: 'Carlos',
       items: [{ sku: 'HS-0412-S-ROSA', qty: 1 }, { sku: 'HS-0377-UNICA-DORADO', qty: 2 }],
@@ -398,13 +381,13 @@ async function main() {
     },
   ];
 
-  // Pedidos nuevos sin asignar, repartidos por zonas sin cobertura.
+  // Pedidos nuevos que todavia no tienen repartidor.
   const PENDING = [
-    { name: 'Mariana Ochoa', phone: '+573001112233', line: 'Cra 100 #22-14', barrio: 'Fontibon', zone: 3 },
-    { name: 'Camila Duarte', phone: '+573002223344', line: 'Cl 145 #91-20', barrio: 'Suba', zone: 4 },
-    { name: 'Isabella Nino', phone: '+573003334455', line: 'Cra 68 #40-15', barrio: 'Teusaquillo', zone: 1 },
-    { name: 'Paula Restrepo', phone: '+573004445566', line: 'Cl 26 Sur #72-04', barrio: 'Kennedy', zone: 5 },
-    { name: 'Juliana Vargas', phone: '+573005556677', line: 'Cra 15 #93-60', barrio: 'Chapinero', zone: 2 },
+    { name: 'Mariana Ochoa', phone: '+573001112233', line: 'Cra 100 #22-14', barrio: 'Alto Prado' },
+    { name: 'Camila Duarte', phone: '+573002223344', line: 'Cl 145 #91-20', barrio: 'Villa Country' },
+    { name: 'Isabella Nino', phone: '+573003334455', line: 'Cra 68 #40-15', barrio: 'Boston' },
+    { name: 'Paula Restrepo', phone: '+573004445566', line: 'Cl 26 Sur #72-04', barrio: 'La Concepcion' },
+    { name: 'Juliana Vargas', phone: '+573005556677', line: 'Cra 15 #93-60', barrio: 'El Prado' },
   ];
   PENDING.forEach((p, i) =>
     ORDERS.push({
@@ -413,7 +396,6 @@ async function main() {
       phone: p.phone,
       line: p.line,
       neighborhood: p.barrio,
-      zone: p.zone,
       status: 'NUEVO',
       items: [{ sku: i % 2 ? 'HS-0455-M-ROSA' : 'HS-0412-M-ROSA', qty: 1 }],
       hoursAgo: 2 - i * 0.2,

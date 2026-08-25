@@ -32,7 +32,6 @@ import {
   ReportQueryDto,
   SettingsDto,
   StockDto,
-  ZoneDto,
 } from './dto/admin.dto';
 
 @Controller('admin')
@@ -167,27 +166,6 @@ export class AdminController {
   @Delete('categories/:id')
   removeCategory(@Param('id') id: string) {
     return this.store.removeCategory(id);
-  }
-
-  // ── Zonas ──────────────────────────────────────────────────
-  @Get('zones')
-  listZones() {
-    return this.store.zones();
-  }
-
-  @Post('zones')
-  createZone(@Body() dto: ZoneDto) {
-    return this.store.createZone(dto);
-  }
-
-  @Put('zones/:id')
-  updateZone(@Param('id') id: string, @Body() dto: ZoneDto) {
-    return this.store.updateZone(id, dto);
-  }
-
-  @Delete('zones/:id')
-  removeZone(@Param('id') id: string) {
-    return this.store.removeZone(id);
   }
 
   // ── Ajustes de la tienda ───────────────────────────────────
