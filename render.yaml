@@ -46,10 +46,13 @@ services:
       - key: UPLOADS_DIR
         value: /var/data/uploads
 
-    # OJO: en el plan free el disco es efimero y las fotos subidas se pierden en
-    # cada despliegue. Para conservarlas hace falta plan de pago y descomentar
-    # este disco (o mover las subidas a Cloudinary / S3).
-    # disk:
-    #   name: uploads
-    #   mountPath: /var/data
-    #   sizeGB: 1
+      # Fotos de producto. En el plan free el disco de Render es efimero, asi
+      # que las subidas van a Cloudinary: con estas tres variables puestas el
+      # backend las sube alli y devuelve una URL absoluta que sobrevive a los
+      # despliegues. Se rellenan a mano en el panel (Environment).
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
