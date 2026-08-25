@@ -14,24 +14,29 @@ import {
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { PasswordChangeGuard } from '../../common/guards/password-change.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AdminOrdersService } from './admin-orders.service';
 import { AdminProductsService } from './admin-products.service';
 import { AdminReportsService } from './admin-reports.service';
 import { AdminRoutesService } from './admin-routes.service';
+import { AdminStoreService } from './admin-store.service';
 import {
   AssignCourierDto,
   BulkAssignDto,
   ChangeStatusDto,
+  CategoryDto,
   CourierDto,
   OrderFilterDto,
   ProductDto,
   ReportQueryDto,
+  SettingsDto,
   StockDto,
+  ZoneDto,
 } from './dto/admin.dto';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PasswordChangeGuard)
 @Roles(Role.ADMIN)
 export class AdminController {
   constructor(
@@ -39,6 +44,7 @@ export class AdminController {
     private readonly products: AdminProductsService,
     private readonly reports: AdminReportsService,
     private readonly routes: AdminRoutesService,
+    private readonly store: AdminStoreService,
   ) {}
 
   // ── Panel ──────────────────────────────────────────────────
@@ -142,4 +148,57 @@ export class AdminController {
   closeCash(@Param('id') id: string) {
     return this.routes.closeCash(id);
   }
+  // ── Categorias ─────────────────────────────────────────────
+  @Get('categories')
+  listCategories() {
+    return this.store.categories();
+  }
+
+  @Post('categories')
+  createCategory(@Body() dto: CategoryDto) {
+    return this.store.createCategory(dto);
+  }
+
+  @Put('categories/:id')
+  updateCategory(@Param('id') id: string, @Body() dto: CategoryDto) {
+    return this.store.updateCategory(id, dto);
+  }
+
+  @Delete('categories/:id')
+  removeCategory(@Param('id') id: string) {
+    return this.store.removeCategory(id);
+  }
+
+  // ── Zonas ──────────────────────────────────────────────────
+  @Get('zones')
+  listZones() {
+    return this.store.zones();
+  }
+
+  @Post('zones')
+  createZone(@Body() dto: ZoneDto) {
+    return this.store.createZone(dto);
+  }
+
+  @Put('zones/:id')
+  updateZone(@Param('id') id: string, @Body() dto: ZoneDto) {
+    return this.store.updateZone(id, dto);
+  }
+
+  @Delete('zones/:id')
+  removeZone(@Param('id') id: string) {
+    return this.store.removeZone(id);
+  }
+
+  // ── Ajustes de la tienda ───────────────────────────────────
+  @Get('settings')
+  settings() {
+    return this.store.settings();
+  }
+
+  @Put('settings')
+  saveSettings(@Body() dto: SettingsDto) {
+    return this.store.saveSettings(dto);
+  }
+
 }

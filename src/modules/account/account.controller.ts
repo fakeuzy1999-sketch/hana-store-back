@@ -2,11 +2,12 @@ import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nes
 import { AccountService } from './account.service';
 import { AddressDto } from './dto/account.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PasswordChangeGuard } from '../../common/guards/password-change.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('me')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PasswordChangeGuard)
 export class AccountController {
   constructor(private readonly account: AccountService) {}
 

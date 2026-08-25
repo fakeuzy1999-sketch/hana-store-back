@@ -12,6 +12,7 @@ import { extname } from 'path';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { PasswordChangeGuard } from '../../common/guards/password-change.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UploadsService } from './uploads.service';
 
@@ -19,7 +20,7 @@ const ALLOWED = ['.jpg', '.jpeg', '.png', '.webp', '.avif'];
 
 /** Sube una foto de producto. Solo admin: es lo que alimenta el catalogo. */
 @Controller('uploads')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PasswordChangeGuard)
 @Roles(Role.ADMIN)
 export class UploadsController {
   constructor(private readonly uploads: UploadsService) {}

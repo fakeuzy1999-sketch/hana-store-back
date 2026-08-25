@@ -32,3 +32,14 @@ export class LoginDto {
   @MinLength(1)
   password: string;
 }
+
+export class ChangePasswordDto {
+  @IsString()
+  @MinLength(1)
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(8, { message: 'La contraseña nueva debe tener al menos 8 caracteres' })
+  @MaxLength(72)
+  newPassword: string;
+}

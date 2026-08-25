@@ -26,6 +26,8 @@ model User {
   phone        String?   @unique
   passwordHash String?
   role         Role      @default(CLIENT)
+  /// Cuentas creadas por otra persona: obligan a elegir clave propia al entrar.
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

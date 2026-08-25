@@ -77,3 +77,28 @@ export type Range = (typeof RANGES)[number];
 export class ReportQueryDto {
   @IsOptional() @IsIn(RANGES) range?: Range;
 }
+
+export class CategoryDto {
+  @IsString() @MinLength(2) @MaxLength(60) name: string;
+  @IsOptional() @IsInt() @Min(0) position?: number;
+}
+
+export class ZoneDto {
+  @IsInt() @Min(1) number: number;
+  @IsString() @MinLength(2) @MaxLength(60) name: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) neighborhoods?: string[];
+  @IsInt() @Min(0) deliveryFee: number;
+  @IsInt() @Min(0) etaHoursMin: number;
+  @IsInt() @Min(0) etaHoursMax: number;
+  @IsOptional() @IsBoolean() active?: boolean;
+}
+
+/** Los ajustes son texto libre; el importe de envio gratis viaja como cadena. */
+export class SettingsDto {
+  @IsOptional() @IsString() @MaxLength(40) whatsapp?: string;
+  @IsOptional() @IsString() @MaxLength(40) instagram?: string;
+  @IsOptional() @IsString() @MaxLength(160) coverage?: string;
+  @IsOptional() @IsString() @MaxLength(160) hours?: string;
+  @IsOptional() @IsString() @MaxLength(160) tagline?: string;
+  @IsOptional() @IsString() @MaxLength(12) freeShippingFrom?: string;
+}

@@ -4,11 +4,18 @@ import { AdminOrdersService } from './admin-orders.service';
 import { AdminProductsService } from './admin-products.service';
 import { AdminReportsService } from './admin-reports.service';
 import { AdminRoutesService } from './admin-routes.service';
+import { AdminStoreService } from './admin-store.service';
 import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [OrdersModule],
   controllers: [AdminController],
-  providers: [AdminOrdersService, AdminProductsService, AdminReportsService, AdminRoutesService],
+  providers: [
+    AdminOrdersService,
+    AdminProductsService,
+    AdminReportsService,
+    AdminRoutesService,
+    AdminStoreService,
+  ],
 })
 export class AdminModule {}

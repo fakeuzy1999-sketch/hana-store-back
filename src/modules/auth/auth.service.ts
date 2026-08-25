@@ -1,8 +1,13 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { ChangePasswordDto, LoginDto, RegisterDto } from './dto/auth.dto';
 
 /** Deja el telefono en digitos con indicativo, para que `+57 310 555 4821` y `3105554821` sean el mismo. */
 export function normalizePhone(raw: string): string {
@@ -22,6 +27,8 @@ export interface PublicUser {
   phone: string | null;
   email: string;
   role: string;
+  /** Cuenta recien creada por un admin: hay que elegir clave propia antes de nada. */
+  mustChangePassword: boolean;
 }
 
 @Injectable()
@@ -72,6 +79,30 @@ export class AuthService {
     return { token: this.jwt.sign({ sub: user.id }), user: this.publicUser(user) };
   }
 
+  /**
+   * Cambia la clave propia. Sirve para el cambio voluntario y para el obligatorio
+   * de las cuentas que crea un admin: en ambos casos baja `mustChangePassword`.
+   */
+  async changePassword(id: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id } });
+    if (!user.passwordHash || !(await bcrypt.compare(dto.currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException('La contraseña actual no es correcta');
+    }
+    if (await bcrypt.compare(dto.newPassword, user.passwordHash)) {
+      throw new BadRequestException('La contraseña nueva tiene que ser distinta de la actual');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash: await bcrypt.hash(dto.newPassword, 10),
+        mustChangePassword: false,
+      },
+    });
+    // Token nuevo: el anterior se emitio con la cuenta aun pendiente de cambio.
+    return this.sign(updated);
+  }
+
   private publicUser(user: PublicUser): PublicUser {
     return {
       id: user.id,
@@ -79,6 +110,7 @@ export class AuthService {
       phone: user.phone,
       email: user.email,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 }

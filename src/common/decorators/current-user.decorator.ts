@@ -7,6 +7,7 @@ export interface AuthUser {
   name: string;
   email: string;
   phone: string | null;
+  mustChangePassword: boolean;
 }
 
 /** Inyecta el usuario del JWT. Es `undefined` en rutas con OptionalJwtGuard sin token. */
