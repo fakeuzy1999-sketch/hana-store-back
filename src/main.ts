@@ -7,8 +7,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Solo las fotos servidas como estaticos quedan fuera de /api. El comodin es
+  // obligatorio ('*path', no '{*path}'): con el opcional tambien casaba la ruta
+  // desnuda 'uploads' y el POST del controlador se quedaba sin prefijo, asi que
+  // /api/uploads respondia 404 y no se podian subir fotos desde el panel.
   // Sintaxis de path-to-regexp v8 (Express 5): 'uploads/(.*)' quedo obsoleta.
-  app.setGlobalPrefix('api', { exclude: ['uploads/{*path}'] });
+  app.setGlobalPrefix('api', { exclude: ['uploads/*path'] });
   app.enableCors({ origin: process.env.CORS_ORIGIN?.split(',') ?? true, credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({

@@ -4,7 +4,7 @@
 
 services:
   - type: web
-    name: hannah-store-api
+    name: hana-store-back
     runtime: node
     plan: free
     region: oregon
